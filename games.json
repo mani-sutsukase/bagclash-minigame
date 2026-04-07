@@ -1,0 +1,15 @@
+{
+  "games": [
+    {
+      "id": "candycrush",
+      "name": "糖果消消乐",
+      "description": "三消游戏，消除3个相同糖果获得分数",
+      "type": "match3",
+      "icon": "🍬",
+      "version": "1.0.0",
+      "status": "ready",
+      "path": "/candycrush",
+      "screenshot": ""
+    }
+  ]
+}

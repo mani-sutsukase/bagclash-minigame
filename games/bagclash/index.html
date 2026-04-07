@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖果消消乐 - 小游戏平台</title>
+    <link rel="stylesheet" href="..//minigame/common/styles.css">
+    <style>
+        .game-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: calc(100vh - 150px);
+        }
+        
+        canvas {
+            background: #2c3e50;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            max-width: 100%;
+        }
+        
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: #5568d3;
+            transform: scale(1.02);
+        }
+        
+        .control-btn.secondary {
+            background: #6c757d;
+        }
+        
+        .control-btn.secondary:hover {
+            background: #5a6268;
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-layout">
+        <a href="/minigame" class="back-button">🔙 返回游戏列表</a>
+        
+        <div class="game-title-banner">
+            <h1>🍬 糖果消消乐</h1>
+            <p>三消游戏，消除3个相同糖果获得分数</p>
+        </div>
+        
+        <canvas id="game-canvas" width="1080" height="1080"></canvas>
+        
+        <div id="status-message" class="status-message">点击两个相邻糖果进行交换</div>
+        
+        <div class="game-controls">
+            <button id="new-game-btn" class="control-btn">🎮 新游戏</button>
+            <button id="help-btn" class="control-btn secondary">❓ 帮助</button>
+        </div>
+    </div>
+
+    <script src="/minigame/common/GameEngine.js"></script>
+    <script src="/minigame/common/UIController.js"></script>
+    <script src="/minigame/games/bagclash/logic/Game.js"></script>
+    <script src="/minigame/games/bagclash/config.js"></script>
+    <script src="/minigame/games/bagclash/render/Renderer.js"></script>
+    
+    <script>
+        // 初始化
+        console.log('=== 游戏初始化开始 ===');
+        
+        const canvas = document.getElementById('game-canvas');
+        console.log('Canvas元素:', canvas);
+        
+        if (!CandyCrushGame) {
+            console.error('CandyCrushGame类未定义！');
+        } else {
+            console.log('CandyCrushGame类:', CandyCrushGame);
+        }
+        
+        if (!CandyCrushConfig) {
+            console.error('CandyCrushConfig未定义！');
+        } else {
+            console.log('CandyCrushConfig:', CandyCrushConfig);
+        }
+        
+        const game = new CandyCrushGame(CandyCrushConfig);
+        console.log('游戏实例:', game);
+        
+        if (!CandyCrushRenderer) {
+            console.error('CandyCrushRenderer类未定义！');
+        }
+        
+        const renderer = new CandyCrushRenderer(canvas);
+        console.log('渲染器实例:', renderer);
+
+        // 渲染游戏
+        function renderGame() {
+            console.log('renderGame被调用');
+            renderer.render(game);
+        }
+
+        // 处理点击事件
+        canvas.addEventListener('click', async (e) => {
+            if (game.isProcessing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            const cell = renderer.getCellFromPosition(x, y);
+            if (cell) {
+                const result = game.handleClick(cell.x, cell.y);
+                
+                if (result) {
+                    updateStatus(result);
+                    renderGame();
+
+                    // 如果是有效的交换，处理匹配
+                    if (result.type === 'swap' && result.valid) {
+                        await game.processMatches();
+                        renderGame();
+                    }
+                }
+            }
+        });
+
+        // 更新状态消息
+        function updateStatus(result) {
+            const el = document.getElementById('status-message');
+            if (!el) return;
+
+            const messages = {
+                'select': '已选中糖果，请选择相邻的糖果进行交换',
+                'swap': result.valid ? '✅ 有效交换！' : '❌ 无效交换，请选择相邻的糖果'
+            };
+
+            el.textContent = messages[result.type] || '';
+            el.style.color = result.valid ? '#28a745' : '#dc3545';
+        }
+
+        // 新游戏按钮
+        document.getElementById('new-game-btn').addEventListener('click', () => {
+            game.init();
+            game.state = 'ready';
+            document.getElementById('status-message').textContent = '点击两个相邻糖果进行交换';
+            document.getElementById('status-message').style.color = '#667eea';
+            renderGame();
+        });
+
+        // 帮助按钮
+        document.getElementById('help-btn').addEventListener('click', () => {
+            alert(`🍬 糖果消消乐 - 游戏帮助\n\n📖 玩法说明：\n1. 点击一个糖果选中它\n2. 点击相邻的糖果进行交换\n3. 如果交换后能连成3个或更多相同的糖果，则消除\n4. 消除的糖果消失，上方的糖果下落\n5. 顶部空位随机生成新的糖果\n6. 随机生成时不会在上下左右2格内生成相同类型\n7. 目标是获得最高分数\n\n🎯 策略技巧：\n- 优先创造连消机会\n- 注意观察糖果的分布\n- 合理规划交换顺序`);
+        });
+
+        // 初始化游戏
+        game.init();
+        game.state = 'ready';
+        renderGame();
+    </script>
+    <!-- 简单Canvas测试 -->
+    <script>
+        console.log('=== 简单Canvas测试开始 ===');
+        
+        const canvas = document.getElementById('game-canvas');
+        if (!canvas) {
+            console.error('找不到canvas元素！');
+        } else {
+            console.log('Canvas元素:', canvas);
+            console.log('Canvas尺寸:', canvas.width, canvas.height);
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('无法获取Canvas上下文！');
+            } else {
+                console.log('Canvas上下文:', ctx);
+                
+                // 绘制一个简单的测试图形
+                ctx.fillStyle = 'red';
+                ctx.fillRect(10, 10, 100, 50);
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText('Canvas测试成功！', 15, 40);
+                
+                console.log('测试图形已绘制');
+            }
+        }
+        
+        console.log('=== 简单Canvas测试结束 ===');
+    </script>
+</body>
+</html>
