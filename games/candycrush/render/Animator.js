@@ -41,7 +41,6 @@ class CandyCrushAnimator {
 
     /**
      * 添加消除动画
-
      * @param {Array} candies - 被消除的糖果列表
      * @param {number} duration - 动画时长（可选）
      */
@@ -83,7 +82,7 @@ class CandyCrushAnimator {
         // 更新FPS
         this.updateFps(timestamp);
 
-        // 更新动画进度
+        // 更新了动画进度
         this.animations.forEach(animation => {
             if (animation.progress < 1) {
                 const elapsed = timestamp - animation.startTime;
@@ -104,7 +103,7 @@ class CandyCrushAnimator {
     updateFps(timestamp) {
         this.frameCount++;
         
-        // 每1秒更新了FPS
+        // 每1秒更新一次FPS
         if (timestamp - this.lastFpsUpdate >= 1000) {
             this.fps = this.frameCount;
             this.frameCount = 0;
@@ -239,7 +238,7 @@ class CandyCrushAnimator {
         const grid = renderer.game.grid;
         const gridWidth = grid[0] ? grid[0].length : 0;
         const gridHeight = grid.length;
-        const gridWidthPixels = = gridWidth * cellSize;
+        const gridWidthPixels = gridWidth * cellSize;
         const gridHeightPixels = gridHeight * cellSize;
         
         const startX = (renderer.config.leftWidth - gridWidthPixels) / 2;

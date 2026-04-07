@@ -37,6 +37,9 @@ class CandyCrushRenderer {
 
         // 动画队列
         this.animations = [];
+        
+        // 引入Animator类
+        this.animator = new CandyCrushAnimator();
     }
 
     /**
@@ -277,9 +280,8 @@ class CandyCrushRenderer {
      * 绘制动画
      */
     drawAnimations() {
-        this.animations.forEach(animation => {
-            this.drawAnimation(animation);
-        });
+        // 使用Animator类来渲染动画
+        this.animator.render(this.ctx, this);
     }
 
     /**
@@ -342,30 +344,11 @@ class CandyCrushRenderer {
 
     /**
      * 绘制下落动画
+     * 注意：此方法已废弃，由Animator类处理
      */
     drawFallAnimation(animation) {
-        const {candy, from, to, progress} = animation.data;
-        const cellSize = this.config.cell.size + this.config.cell.padding * 2;
-        
-        const grid = this.game.grid;
-        const gridWidth = grid[0] ? grid[0].length : 0;
-        const gridHeight = grid.length;
-        const gridWidthPixels = gridWidth * cellSize;
-        const gridHeightPixels = gridHeight * cellSize;
-        
-        const startX = (this.config.leftWidth - gridWidthPixels) / 2;
-        const startY = (this.canvas.height - gridHeightPixels) / 2;
-
-        const fromX = startX + from.x * cellSize + cellSize / 2;
-        const fromY = startY + from.y * cellSize + cellSize / 2;
-        const toX = startX + to.x * cellSize + cellSize / 2;
-        const toY = startY + to.y * cellSize + cellSize / 2;
-
-        // 计算当前位置
-        const currentX = fromX + (toX - fromX) * progress;
-        const currentY = fromY + (toY - fromY) * progress;
-
-        this.drawCandy(candy, currentX, currentY, cellSize / 2 - 5);
+        // 此方法已废弃，由Animator类处理
+        // 保留以避免旧代码调用时出错
     }
 
     /**
