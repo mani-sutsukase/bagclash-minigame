@@ -19,6 +19,15 @@ class CandyCrushGame {
         this.levelTarget = this.calculateLevelTarget(1);  // 每关目标积分（斐波那契）
         this.checkInterval = 10;  // 每10次操作检查一次
         this.lastCheckMove = 0;   // 上次检查的移动次数
+
+        // 动画系统
+        this.animations = [];      // 动画队列
+        this.animationConfig = {
+            gravity: 1.5,          // 重力加速度
+            fallDuration: 400,    // 下落动画时长（ms）
+            matchDuration: 300,   // 消除动画时长（ms）
+            spawnDuration: 250    // 生成动画时长（ms）
+        };
     }
 
     /**
@@ -69,6 +78,9 @@ class CandyCrushGame {
         this.selectedCandy = null;
         this.isProcessing = false;
         this.state = 'ready';
+
+        // 清空动画队列
+        this.animations = [];
 
         console.log('游戏初始化完成:', {
             grid: this.grid,
@@ -167,7 +179,7 @@ class CandyCrushGame {
         const availableTypes = types.filter(type => !allExclude.includes(type));
 
         let type;
-        if (availableTypes.length === 0) {
+        if (aavailableTypes.length === 0) {
             // 如果没有可用类型，从所有类型中随机选择
             type = types[Math.floor(Math.random() * types.length)];
         } else {
@@ -178,7 +190,10 @@ class CandyCrushGame {
             type,
             x,
             y,
-            id: `${x}-${y}-${Date.now()}-${Math.random()}`
+            id: `${x}-${y}-${Date.now()}-${Math.random()}`,
+            // 物理属性
+            velocity: {x: 0, y: 0},
+            acceleration: {x: 0, y: 0}
         };
     }
 
@@ -426,11 +441,12 @@ class CandyCrushGame {
     }
 
     /**
-     * 填充空位
-     * @returns {Object} 填充信息
+     * 填充空位（带动画数据生成）
+     * @returns {Object} 填充信息（包含动画数据）
      */
     fillEmpty() {
         const movements = [];
+        const animations = [];
 
         // 从下往上处理
         for (let x = 0; x < this.gridSize.width; x++) {
@@ -443,6 +459,16 @@ class CandyCrushGame {
                     // 下落
                     const candy = this.grid[y][x];
                     const newY = y + emptyCount;
+                    
+                    // 生成下落动画数据
+                    animations.push({
+                        type: 'fall',
+                        candy: candy,
+                        from: {x, y},
+                        to: {x, y: newY},
+                        duration: this.animationConfig.fallDuration
+                    });
+
                     this.grid[newY][x] = candy;
                     this.grid[y][x] = null;
                     candy.y = newY;
@@ -455,12 +481,20 @@ class CandyCrushGame {
                 }
             }
 
-            // 填充顶部空位
+            // 填充顶部空位（生成动画）
             for (let y = 0; y < emptyCount; y++) {
                 const candy = this.generateCandy(x, y);
                 candy.x = x;
                 candy.y = y;
                 this.grid[y][x] = candy;
+
+                // 生成生成动画数据
+                animations.push({
+                    type: 'spawn',
+                    candy: candy,
+                    to: {x, y},
+                    duration: this.animationConfig.spawnDuration
+                });
 
                 movements.push({
                     candy,
@@ -470,7 +504,10 @@ class CandyCrushGame {
             }
         }
 
-        return {movements};
+        return {
+            movements: movements,
+            animations: animations
+        };
     }
 
     /**
@@ -485,23 +522,40 @@ class CandyCrushGame {
             const matches = this.findMatches();
             if (matches.length === 0) break;
 
-            // 消除
+            // 消除（生成消除动画）
             const removed = this.removeMatches();
+            
+            // 添加消除动画数据到结果
             results.push({
                 type: 'remove',
                 candies: removed,
-                matches: matches
+                matches: matches,
+                animations: [{
+                    type: 'match',
+                    candies: removed,
+                    duration: this.animationConfig.matchDuration
+                }]
             });
 
-            // 下落
+            // 下落（生成下落和生成动画）
             const fill = this.fillEmpty();
+            
+            // 添加动画数据
+            fill.animations.forEach(anim => {
+                this.animations.push(anim);
+            });
+
             results.push({
                 type: 'fill',
-                movements: fill.movements
+                movements: fill.movements,
+                animations: fill.animations
             });
 
-            // 等待动画
-            await this.delay(300);
+            // 等待动画（使用配置的时长）
+            await this.delay(Math.max(
+                this.animationConfig.fallDuration,
+                this.animationConfig.matchDuration
+            ));
         }
 
         this.isProcessing = false;
@@ -593,6 +647,7 @@ class CandyCrushGame {
      */
     update(deltaTime) {
         // 游戏更新逻辑（主要用于动画）
+        // 动画更新由Animator处理
     }
 
     /**
@@ -609,8 +664,24 @@ class CandyCrushGame {
             state: this.state,
             level: this.level,
             levelTarget: this.levelTarget,
-            checkInterval: this.checkInterval
+            checkInterval: this.checkInterval,
+            animations: this.animations
         };
+    }
+
+    /**
+     * 获取动画队列
+     * @returns {Array} 动画队列
+     */
+    getAnimations() {
+        return this.animations;
+    }
+
+    /**
+     * 清空动画队列
+     */
+    clearAnimations() {
+        this.animations = [];
     }
 }
 
