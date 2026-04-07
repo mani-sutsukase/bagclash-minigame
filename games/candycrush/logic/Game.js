@@ -179,7 +179,7 @@ class CandyCrushGame {
         const availableTypes = types.filter(type => !allExclude.includes(type));
 
         let type;
-        if (aavailableTypes.length === 0) {
+        if (availableTypes.length === 0) {
             // 如果没有可用类型，从所有类型中随机选择
             type = types[Math.floor(Math.random() * types.length)];
         } else {
